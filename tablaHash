@@ -1,0 +1,153 @@
+class Person:
+    def __init__(self, name: str, phone: str, address: str):
+        self.name: str = name
+        self.phone: str = phone
+        self.address: str = address
+
+    def __str__(self) -> str:
+        return f"Name: {self.name}, Phone: {self.phone}, Address: {self.address}"
+
+def hash_person(person: Person, capacity: int) -> int:
+    if person.phone:  
+        hash_value: int = len(person.name) + int(person.phone[0])
+    else:
+        hash_value: int = len(person.name)  
+    return hash_value % capacity
+
+class HashTable:
+    def __init__(self, capacity: int):
+        self.capacity: int = capacity
+        self.table: list = [None] * capacity
+        self.size: int = 0
+
+    def __len__(self) -> int:
+        return self.size
+
+    def is_empty(self) -> bool:
+        return self.size == 0
+
+    def insert(self, key: Person, value: str):
+        index: int = hash_person(key, self.capacity)  
+        if self.table[index] is None:
+            self.table[index] = [(key, value)]
+        else:
+            self.table[index].append((key, value))
+        self.size += 1
+
+    def search(self, key: Person) -> str:
+        index: int = hash_person(key, self.capacity) 
+        if self.table[index] is not None:
+            for k, v in self.table[index]:
+                if k.name == key.name:  
+                    return v
+        return None
+
+    def delete(self, key: Person):
+        index: int = hash_person(key, self.capacity)  
+        if self.table[index] is not None:
+            original_size: int = len(self.table[index])
+            self.table[index] = [(k, v) for k, v in self.table[index] if k.name != key.name]  
+            if len(self.table[index]) < original_size:
+                self.size -= 1
+
+    def display_contacts(self):
+        if self.is_empty():
+            print("The directory is empty.")
+            return
+
+        print("Contacts:")
+        for i in range(self.capacity):
+            if self.table[i] is not None:
+                for key, value in self.table[i]:
+                    print(f"  {key}: {value}")
+
+    def update_contact(self, key: Person, new_phone: str, new_address: str):
+        """Actualiza la información de un contacto existente."""
+        index: int = hash_person(key, self.capacity)
+        if self.table[index] is not None:
+            for i, (k, v) in enumerate(self.table[index]):
+                if k.name == key.name:
+                    self.table[index][i] = (Person(k.name, new_phone, new_address), new_phone)
+                    print("Contact updated.")
+                    return
+        print("Contact not found.")
+
+    def search_by_address(self, address: str) -> list:
+        """Busca contactos por dirección."""
+        results = []
+        for bucket in self.table:
+            if bucket is not None:
+                for key, value in bucket:
+                    if key.address == address:
+                        results.append((key, value))
+        return results
+
+    def count_contacts_per_index(self):
+        """Cuenta cuántos contactos hay en cada índice de la tabla hash."""
+        for i, bucket in enumerate(self.table):
+            count = len(bucket) if bucket is not None else 0
+            print(f"Index {i}: {count} contact(s)")
+
+if __name__ == "__main__":
+    ht = HashTable(10)
+
+    while True:
+        print("\nWhat do you want to do?")
+        print("1. Add new contact")
+        print("2. Show all contacts")
+        print("3. Delete contact")
+        print("4. Update contact")
+        print("5. Search by address")
+        print("6. Count contacts per index")
+        print("7. Exit")
+        print("8. Call contact")
+
+        option: str = input("Choose an option: ")
+
+        if option == "1":
+            name: str = input("Name: ")
+            phone: str = input("Phone: ")
+            if not phone.isdigit():
+                print("The phone number must be numeric.")
+                continue
+            address: str = input("Address: ")
+            person: Person = Person(name, phone, address)
+            ht.insert(person, person.phone)
+            print("Contact added.")
+        elif option == "2":
+            ht.display_contacts()
+        elif option == "3":
+            name: str = input("Name of contact to delete: ")
+            person: Person = Person(name, "", "")
+            ht.delete(person)
+            print("Contact deleted.")
+        elif option == "4":
+            name: str = input("Name of contact to update: ")
+            new_phone: str = input("New phone: ")
+            new_address: str = input("New address: ")
+            person: Person = Person(name, "", "")
+            ht.update_contact(person, new_phone, new_address)
+        elif option == "5":
+            address: str = input("Address to search: ")
+            results = ht.search_by_address(address)
+            if results:
+                print("Contacts found:")
+                for key, value in results:
+                    print(f"  {key}: {value}")
+            else:
+                print("No contacts found with that address.")
+        elif option == "6":
+            ht.count_contacts_per_index()
+        elif option == "7":
+            break
+        elif option == "8":
+            name: str = input("Name of contact to call: ")
+            person: Person = Person(name, "", "")
+            contact: str = ht.search(person)
+            if contact:
+                print(f"Calling {contact}...")
+            else:
+                print("Contact not found.")
+        else:
+            print("Invalid option.")
+
